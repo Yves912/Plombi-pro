@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PlombiPro</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { display: flex; min-height: 100vh; background: #f4f6f8; font-family: Arial, Helvetica, sans-serif; color: #222; font-size: 14px; }
+  #sidebar { width: 220px; background: #1a5276; display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .logo { display: flex; align-items: center; gap: 10px; padding: 20px 16px; background: #154360; }
+  .logo-icon { font-size: 24px; }
+  .logo-title { font-size: 17px; font-weight: bold; color: #fff; }
+  .logo-sub { font-size: 11px; color: #aed6f1; margin-top: 2px; }
+  nav { display: flex; flex-direction: column; padding: 12px 8px; flex: 1; gap: 2px; }
+  .nav-btn { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 6px; border: none; background: transparent; color: #aed6f1; cursor: pointer; font-size: 14px; text-align: left; font-family: Arial; }
+  .nav-btn:hover { background: #154360; color: #fff; }
+  .nav-btn.active { background: #fff; color: #1a5276; font-weight: bold; }
+  .badge { margin-left: auto; background: #e74c3c; color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: bold; }
+  .sidebar-footer { padding: 14px 16px; border-top: 1px solid #154360; }
+  .footer-line { font-size: 11px; color: #7fb3d3; margin-bottom: 3px; }
+  #main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
+  #topbar { background: #fff; border-bottom: 2px solid #e0e0e0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  #topbar-title { font-size: 18px; font-weight: bold; color: #1a5276; }
+  .date-tag { font-size: 12px; color: #777; background: #f0f0f0; padding: 4px 10px; border-radius: 4px; }
+  #content { padding: 24px; flex: 1; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .kpi-card { background: #fff; border-radius: 8px; padding: 18px; border-left: 5px solid #aaa; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .kpi-value { font-size: 22px; font-weight: bold; color: #222; margin-bottom: 4px; }
+  .kpi-label { font-size: 13px; font-weight: bold; }
+  .kpi-sub { font-size: 12px; color: #999; margin-top: 4px; }
+  .span2 { grid-column: span 2; }
+  .span4 { grid-column: span 4; }
+  .card { background: #fff; border-radius: 8px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
+  .card-title { font-size: 14px; font-weight: bold; color: #333; }
+  .link-btn { background: none; border: none; color: #1a5276; cursor: pointer; font-size: 13px; font-family: Arial; text-decoration: underline; }
+  .mini-cards { display: flex; gap: 14px; margin-bottom: 20px; }
+  .mini-card { flex: 1; background: #fff; border-radius: 8px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); border-top: 4px solid #aaa; }
+  .mini-card-val { font-size: 18px; font-weight: bold; }
+  .mini-card-lbl { color: #777; font-size: 12px; margin-top: 4px; }
+  .table-wrap { background: #fff; border-radius: 8px; overflow: hidden; overflow-x: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #f8f9fa; padding: 11px 14px; text-align: left; font-size: 12px; color: #555; font-weight: bold; border-bottom: 2px solid #e0e0e0; }
+  tr { border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #f8f9fa; }
+  td { padding: 11px 14px; font-size: 14px; vertical-align: middle; }
+  .pill { border-radius: 4px; padding: 3px 10px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+  .pill-green { background: #eafaf1; color: #1e8449; border: 1px solid #a9dfbf; }
+  .pill-orange { background: #fef9e7; color: #b7950b; border: 1px solid #f9e79f; }
+  .pill-red { background: #fdedec; color: #c0392b; border: 1px solid #f5b7b1; }
+  .cat-tag { background: #eaf2ff; border: 1px solid #c6d9f7; border-radius: 4px; padding: 3px 8px; font-size: 12px; color: #1a5276; }
+  .icon-btn { background: none; border: 1px solid #ddd; cursor: pointer; color: #555; font-size: 13px; font-family: Arial; padding: 3px 8px; border-radius: 4px; margin-right: 4px; }
+  .icon-btn:hover { background: #f0f0f0; }
+  .icon-btn.red { border-color: #f5b7b1; color: #c0392b; }
+  .icon-btn.red:hover { background: #fdedec; }
+  .controls { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .search-input { background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 8px 12px; color: #222; font-size: 14px; font-family: Arial; flex: 1; min-width: 200px; outline: none; }
+  .search-input:focus { border-color: #1a5276; }
+  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cat-btn { background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 6px 12px; color: #555; cursor: pointer; font-size: 13px; font-family: Arial; }
+  .cat-btn.active, .cat-btn:hover { background: #1a5276; border-color: #1a5276; color: #fff; }
+  .btn-primary { background: #1a5276; color: #fff; border: none; border-radius: 6px; padding: 9px 18px; cursor: pointer; font-size: 14px; font-weight: bold; font-family: Arial; }
+  .btn-primary:hover { background: #154360; }
+  .btn-secondary { background: #fff; color: #555; border: 1px solid #ccc; border-radius: 6px; padding: 9px 18px; cursor: pointer; font-size: 14px; font-family: Arial; }
+  .btn-secondary:hover { background: #f5f5f5; }
+  .bar-row { margin-bottom: 14px; }
+  .bar-label-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; color: #444; }
+  .bar-track { background: #e8e8e8; border-radius: 4px; height: 8px; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+  .overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 10px; width: 90%; max-width: 560px; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e8e8e8; background: #f8f9fa; border-radius: 10px 10px 0 0; }
+  .modal-title { font-weight: bold; font-size: 15px; color: #1a5276; }
+  .close-btn { background: none; border: none; color: #999; cursor: pointer; font-size: 18px; }
+  .modal-body { padding: 20px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; }
+  label { font-size: 12px; color: #555; font-weight: bold; margin-bottom: 5px; }
+  input, select { background: #fff; border: 1px solid #ccc; border-radius: 5px; padding: 8px 10px; color: #222; font-size: 14px; font-family: Arial; outline: none; width: 100%; }
+  input:focus, select:focus { border-color: #1a5276; }
+  .alert-card { background: #fff; border: 1px solid #f5b7b1; border-left: 4px solid #e74c3c; border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .alert-chip { background: #fdedec; border: 1px solid #f5b7b1; border-radius: 4px; padding: 6px 12px; font-size: 13px; color: #444; display: inline-block; margin: 3px; }
+  .alert-critical-msg { color: #c0392b; margin-bottom: 16px; font-size: 14px; font-weight: bold; background: #fdedec; padding: 10px 14px; border-radius: 6px; }
+  .alert-bar-track { background: #f5b7b1; border-radius: 4px; height: 6px; margin-top: 8px; width: 180px; max-width: 100%; }
+  .alert-bar-fill { height: 100%; background: #e74c3c; border-radius: 4px; }
+  .empty-state { text-align: center; padding: 60px 20px; }
+  .empty-msg { color: #1e8449; font-size: 18px; font-weight: bold; margin-top: 12px; }
+  .empty-sub { color: #888; margin-top: 8px; }
+  #toast { position: fixed; bottom: 24px; right: 24px; color: #fff; padding: 12px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; z-index: 200; box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: none; font-family: Arial; }
+  .ligne-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .ligne-row select { flex: 2; }
+  .qte-input { width: 80px !important; flex-shrink: 0; }
+  .ligne-prix { color: #1a5276; min-width: 90px; font-size: 13px; font-weight: bold; }
+  .vente-total { margin-top: 14px; padding: 12px; border-top: 2px solid #e8e8e8; display: flex; justify-content: flex-end; font-size: 17px; font-weight: bold; color: #1a5276; }
+  .alert-banner { border: 1px solid #f5b7b1; border-radius: 8px; padding: 14px 18px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .alert-banner-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .alert-chips-wrap { display: flex; flex-wrap: wrap; }
+  @media (max-width: 900px) { .dash-grid { grid-template-columns: repeat(2,1fr); } .span2,.span4 { grid-column: span 2; } }
+  @media (max-width: 600px) { body { flex-direction: column; } #sidebar { width: 100%; height: auto; position: static; } nav { flex-direction: row; flex-wrap: wrap; } .sidebar-footer { display: none; } .dash-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="logo">
+    <span class="logo-icon">&#128295;</span>
+    <div><div class="logo-title">PlombiPro</div><div class="logo-sub">Gestion de Boutique</div></div>
+  </div>
+  <nav>
+    <button class="nav-btn active" data-page="dashboard" onclick="navigate('dashboard')"><span>&#127968;</span><span>Tableau de bord</span></button>
+    <button class="nav-btn" data-page="stock" onclick="navigate('stock')"><span>&#128230;</span><span>Inventaire</span></button>
+    <button class="nav-btn" data-page="ventes" onclick="navigate('ventes')"><span>&#129534;</span><span>Ventes</span></button>
+    <button class="nav-btn" data-page="alertes" onclick="navigate('alertes')"><span>&#9888;</span><span>Alertes</span><span class="badge" id="alert-badge" style="display:none">0</span></button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="footer-line">v1.0 &mdash; Juin 2026</div>
+    <div class="footer-line" id="footer-count">Stock actif : 0 articles</div>
+  </div>
+</aside>
+
+<div id="main">
+  <header id="topbar">
+    <div id="topbar-title">Tableau de Bord</div>
+    <span class="date-tag">Dimanche 07 juin 2026</span>
+  </header>
+  <div id="content">
+    <div class="page active" id="page-dashboard"><div class="dash-grid" id="kpi-grid"></div></div>
+    <div class="page" id="page-stock">
+      <div class="controls">
+        <input class="search-input" id="stock-search" placeholder="Rechercher un article..." oninput="renderStock()" />
+        <div class="filter-row" id="cat-filters"></div>
+        <button class="btn-primary" onclick="openModal('modal-add-prod')">+ Ajouter Article</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Article</th><th>Cat&eacute;gorie</th><th>Stock</th><th>Prix Unitaire</th><th>Valeur Totale</th><th>Seuil</th><th>Etat</th><th>Actions</th></tr></thead><tbody id="stock-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="page" id="page-ventes">
+      <div class="controls">
+        <div class="filter-row" id="vente-filters">
+          <button class="cat-btn active" data-statut="Tous" onclick="setVenteFilter('Tous')">Tous</button>
+          <button class="cat-btn" data-statut="Payé" onclick="setVenteFilter('Payé')">Pay&eacute;</button>
+          <button class="cat-btn" data-statut="En attente" onclick="setVenteFilter('En attente')">En attente</button>
+        </div>
+        <button class="btn-primary" onclick="openModal('modal-add-vente')">+ Nouvelle Vente</button>
+      </div>
+      <div class="mini-cards" id="vente-mini-cards"></div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Date</th><th>Client</th><th>Articles</th><th>Total</th><th>Statut</th><th>Action</th></tr></thead><tbody id="ventes-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="page" id="page-alertes"><div id="alertes-content"></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-add-prod">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" id="modal-prod-title">Nouvel Article</span><button class="close-btn" onclick="closeModal('modal-add-prod')">&#10005;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:span 2"><label>Nom de l'article *</label><input id="prod-nom" type="text" placeholder="Ex: Tuyau PVC 32mm" /></div>
+        <div class="form-group"><label>Prix unitaire ($) *</label><input id="prod-prix" type="number" step="0.01" min="0" placeholder="0.00" /></div>
+        <div class="form-group"><label>Quantit&eacute; en stock *</label><input id="prod-stock" type="number" min="0" placeholder="0" /></div>
+        <div class="form-group"><label>Seuil d'alerte</label><input id="prod-seuil" type="number" min="0" placeholder="10" /></div>
+        <div class="form-group"><label>Unit&eacute;</label><input id="prod-unite" type="text" placeholder="pcs / m / rouleau..." /></div>
+        <div class="form-group"><label>Cat&eacute;gorie</label><select id="prod-categorie"><option>Tuyaux</option><option>Raccords</option><option>Robinetterie</option><option>Joints</option><option>Soudure</option><option>Fixations</option></select></div>
+      </div>
+      <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-add-prod')">Annuler</button><button class="btn-primary" onclick="saveProduit()">Enregistrer</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-add-vente">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Nouvelle Vente</span><button class="close-btn" onclick="closeModal('modal-add-vente')">&#10005;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:span 2"><label>Client *</label><input id="vente-client" type="text" placeholder="Nom du client ou chantier" /></div>
+        <div class="form-group"><label>Date</label><input id="vente-date" type="date" /></div>
+        <div class="form-group"><label>Statut</label><select id="vente-statut"><option>Payé</option><option>En attente</option></select></div>
+      </div>
+      <div style="margin-top:16px"><label style="display:block;margin-bottom:8px">Articles vendus</label><div id="lignes-container"></div><button class="btn-secondary" style="margin-top:6px" onclick="addLigne()">+ Ajouter une ligne</button></div>
+      <div class="vente-total" id="vente-total-display">Total : $0.00</div>
+      <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-add-vente')">Annuler</button><button class="btn-primary" onclick="saveVente()">Enregistrer la vente</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+
+<!-- Firebase SDK (compat version) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+
+// ── FIREBASE CONFIG ─────────────────────────────────────────────────────────
+// Remplace ces valeurs par tes propres clés Firebase
+const firebaseConfig = {
+  apiKey:            "COLLE_TON_API_KEY_ICI",
+  authDomain:        "COLLE_TON_AUTH_DOMAIN_ICI",
+  projectId:         "COLLE_TON_PROJECT_ID_ICI",
+  storageBucket:     "COLLE_TON_STORAGE_BUCKET_ICI",
+  messagingSenderId: "COLLE_TON_MESSAGING_SENDER_ID_ICI",
+  appId:             "COLLE_TON_APP_ID_ICI"
+};
+
+// Init Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const produitsRef = db.collection("produits");
+const ventesRef   = db.collection("ventes");
+
+// ── DONNÉES EN MÉMOIRE ───────────────────────────────────────────────────────
+let produits = [];
+let ventes   = [];
+
+// ── ÉCOUTE EN TEMPS RÉEL ────────────────────────────────────────────────────
+function startListeners() {
+  // Produits — mise à jour automatique dès qu'une donnée change
+  produitsRef.orderBy("nom").onSnapshot(snapshot => {
+    produits = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderPage(currentPage);
+  });
+
+  // Ventes — mise à jour automatique
+  ventesRef.orderBy("date", "desc").onSnapshot(snapshot => {
+    ventes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderPage(currentPage);
+  });
+}
+
+const CATEGORIES = ["Tous","Tuyaux","Raccords","Robinetterie","Joints","Soudure","Fixations"];
+let currentPage  = "dashboard";
+let filterCat    = "Tous";
+let filterStatut = "Tous";
+let editProdId   = null;
+let lignes       = [];
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const usd = n => "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const alertes = () => produits.filter(p => p.stock <= p.seuil);
+
+function showToast(msg, type = "success") {
+  const t = document.getElementById("toast");
+  t.textContent = (type === "success" ? "✓ " : "✕ ") + msg;
+  t.style.background = type === "success" ? "#27ae60" : "#c0392b";
+  t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 3000);
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("page-" + page).classList.add("active");
+  document.querySelector(`[data-page="${page}"]`).classList.add("active");
+  const titles = { dashboard: "Tableau de Bord", stock: "Gestion de l'Inventaire", ventes: "Suivi des Ventes", alertes: "Alertes de Stock" };
+  document.getElementById("topbar-title").textContent = titles[page];
+  currentPage = page;
+  renderPage(page);
+}
+
+function renderPage(page) {
+  if (page === "dashboard") renderDashboard();
+  if (page === "stock")     renderStock();
+  if (page === "ventes")    renderVentes();
+  if (page === "alertes")   renderAlertes();
+  updateBadge();
+}
+
+function updateBadge() {
+  const a = alertes();
+  const badge = document.getElementById("alert-badge");
+  badge.textContent = a.length;
+  badge.style.display = a.length > 0 ? "inline-block" : "none";
+  document.getElementById("footer-count").textContent = `💧 Stock actif : ${produits.length} articles`;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const totalStock    = produits.reduce((s,p) => s + p.stock * p.prix, 0);
+  const ventesMois    = ventes.filter(v => v.date.startsWith(new Date().toISOString().slice(0,7))).reduce((s,v) => s + v.total, 0);
+  const ventesPayees  = ventes.filter(v => v.statut === "Payé").reduce((s,v) => s + v.total, 0);
+  const al            = alertes();
+
+  const kpis = [
+    { label:"Valeur du Stock",    value: usd(totalStock),   icon:"▦", color:"#e67e22", sub:`${produits.length} références` },
+    { label:"Ventes ce Mois",     value: usd(ventesMois),   icon:"◉", color:"#2980b9", sub:`${ventes.filter(v=>v.date.startsWith(new Date().toISOString().slice(0,7))).length} transactions` },
+    { label:"Revenus Encaissés",  value: usd(ventesPayees), icon:"✦", color:"#27ae60", sub:"Paiements reçus" },
+    { label:"Alertes Stock",      value: al.length,         icon:"⚠", color: al.length > 0 ? "#c0392b" : "#27ae60", sub: al.length > 0 ? "À réapprovisionner" : "Tout va bien" },
+  ];
+
+  const recentVentes  = [...ventes].sort((a,b) => b.date.localeCompare(a.date)).slice(0,4);
+  const topProduits   = [...produits].sort((a,b) => b.stock*b.prix - a.stock*a.prix).slice(0,4);
+  const maxVal        = topProduits[0] ? topProduits[0].stock * topProduits[0].prix : 1;
+  const barColors     = ["#e67e22","#e6a022","#3498db","#27ae60"];
+
+  let html = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-icon" style="color:${k.color}">${k.icon}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      <div class="kpi-bar" style="background:${k.color}"></div>
+    </div>`).join("");
+
+  // Recent ventes
+  html += `<div class="card span2">
+    <div class="card-header"><span class="card-title">Ventes Récentes</span><button class="link-btn" onclick="navigate('ventes')">Voir tout →</button></div>
+    <div class="table-wrap"><table><thead><tr><th>Date</th><th>Client</th><th>Montant</th><th>Statut</th></tr></thead><tbody>
+    ${recentVentes.map(v => `<tr>
+      <td>${v.date}</td>
+      <td>${v.client}</td>
+      <td style="font-weight:700;color:#e67e22">${usd(v.total)}</td>
+      <td><span class="pill ${v.statut==='Payé'?'pill-green':'pill-orange'}">${v.statut}</span></td>
+    </tr>`).join("")}
+    </tbody></table></div></div>`;
+
+  // Top articles
+  html += `<div class="card span2">
+    <div class="card-header"><span class="card-title">Top Articles par Valeur</span><button class="link-btn" onclick="navigate('stock')">Gérer →</button></div>
+    ${topProduits.map((p,i) => {
+      const pct = Math.min(Math.round((p.stock*p.prix/maxVal)*100), 100);
+      return `<div class="bar-row">
+        <div class="bar-label-row"><span style="color:#ccc;font-size:13px">${p.nom}</span><span style="color:#e67e22;font-weight:700;font-size:13px">${usd(p.stock*p.prix)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColors[i]}"></div></div>
+      </div>`;
+    }).join("")}
+  </div>`;
+
+  // Alert banner
+  if (al.length > 0) {
+    html += `<div class="alert-banner span4">
+      <div class="alert-banner-header">
+        <span style="font-weight:700;color:#e74c3c;font-size:13px">⚠ Stocks Critiques</span>
+        <button class="link-btn" onclick="navigate('alertes')">Gérer →</button>
+      </div>
+      <div class="alert-chips-wrap">${al.map(a => `<span class="alert-chip"><strong>${a.nom}</strong> <span style="color:#e74c3c;margin-left:8px">${a.stock} ${a.unite} restants</span></span>`).join("")}</div>
+    </div>`;
+  }
+
+  document.getElementById("kpi-grid").innerHTML = html;
+}
+
+// ── STOCK ─────────────────────────────────────────────────────────────────────
+function renderStock() {
+  // Category filters
+  const filterWrap = document.getElementById("cat-filters");
+  filterWrap.innerHTML = CATEGORIES.map(c =>
+    `<button class="cat-btn ${filterCat===c?'active':''}" onclick="setCatFilter('${c}')">${c}</button>`
+  ).join("");
+
+  const search = (document.getElementById("stock-search") || {value:""}).value.toLowerCase();
+  const filtered = produits.filter(p => {
+    const mc = filterCat === "Tous" || p.categorie === filterCat;
+    const ms = p.nom.toLowerCase().includes(search);
+    return mc && ms;
+  });
+
+  document.getElementById("stock-tbody").innerHTML = filtered.map(p => {
+    const alerte = p.stock <= p.seuil;
+    return `<tr style="${alerte?'background:#1a0a0a':''}">
+      <td style="font-weight:600">${p.nom}</td>
+      <td><span class="cat-tag">${p.categorie}</span></td>
+      <td style="font-weight:700;color:${alerte?'#e74c3c':'#27ae60'}">${p.stock} ${p.unite}</td>
+      <td>${usd(p.prix)}</td>
+      <td style="color:#e67e22">${usd(p.stock*p.prix)}</td>
+      <td>${p.seuil} ${p.unite}</td>
+      <td><span class="pill ${alerte?'pill-red':'pill-green'}">${alerte?'⚠ Critique':'✓ Normal'}</span></td>
+      <td>
+        <button class="icon-btn" onclick="editProduit(${p.id})" title="Modifier">✏</button>
+        <button class="icon-btn red" onclick="deleteProduit(${p.id})" title="Supprimer">✕</button>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function setCatFilter(cat) {
+  filterCat = cat;
+  renderStock();
+}
+
+function editProduit(id) {
+  const p = produits.find(x => x.id === id);
+  if (!p) return;
+  editProdId = id;
+  document.getElementById("modal-prod-title").textContent = "Modifier l'Article";
+  document.getElementById("prod-nom").value      = p.nom;
+  document.getElementById("prod-prix").value     = p.prix;
+  document.getElementById("prod-stock").value    = p.stock;
+  document.getElementById("prod-seuil").value    = p.seuil;
+  document.getElementById("prod-unite").value    = p.unite;
+  document.getElementById("prod-categorie").value = p.categorie;
+  openModal("modal-add-prod");
+}
+
+
+
+
+
+// ── VENTES ────────────────────────────────────────────────────────────────────
+function renderVentes() {
+  const totalAll    = ventes.reduce((s,v) => s+v.total, 0);
+  const totalPaye   = ventes.filter(v=>v.statut==="Payé").reduce((s,v) => s+v.total, 0);
+  const totalAttent = ventes.filter(v=>v.statut==="En attente").reduce((s,v) => s+v.total, 0);
+
+  document.getElementById("vente-mini-cards").innerHTML = [
+    { label:"Total ventes", val: usd(totalAll),    color:"#e67e22" },
+    { label:"Encaissé",     val: usd(totalPaye),   color:"#27ae60" },
+    { label:"En attente",   val: usd(totalAttent), color:"#3498db" },
+  ].map(c => `<div class="mini-card" style="border-top:3px solid ${c.color}">
+    <div class="mini-card-val" style="color:${c.color}">${c.val}</div>
+    <div class="mini-card-lbl">${c.label}</div>
+  </div>`).join("");
+
+  // filters
+  document.querySelectorAll("#vente-filters .cat-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.statut === filterStatut);
+  });
+
+  const filtered = [...ventes].filter(v => filterStatut==="Tous" || v.statut===filterStatut)
+                               .sort((a,b) => b.date.localeCompare(a.date));
+
+  document.getElementById("ventes-tbody").innerHTML = filtered.map(v => `
+    <tr>
+      <td>${v.date}</td>
+      <td style="font-weight:600">${v.client}</td>
+      <td style="color:#aaa">${v.produits.length} article(s)</td>
+      <td style="color:#e67e22;font-weight:700">${usd(v.total)}</td>
+      <td><span class="pill ${v.statut==='Payé'?'pill-green':'pill-orange'}">${v.statut}</span></td>
+      <td><button class="icon-btn" style="font-size:11px" onclick="toggleStatut(${v.id})">${v.statut==='Payé'?'↺ Annuler':'✓ Marquer payé'}</button></td>
+    </tr>`).join("");
+}
+
+function setVenteFilter(s) {
+  filterStatut = s;
+  renderVentes();
+}
+
+
+
+// LIGNES
+function addLigne() {
+  lignes.push({ produitId: "", qte: 1 });
+  renderLignes();
+}
+
+function removeLigne(i) {
+  lignes.splice(i, 1);
+  renderLignes();
+}
+
+function renderLignes() {
+  const options = produits.map(p => `<option value="${p.id}">${p.nom} (${p.stock} ${p.unite} dispo)</option>`).join("");
+  document.getElementById("lignes-container").innerHTML = lignes.map((l, i) => {
+    const p = produits.find(x => x.id === l.produitId);
+    const montant = p ? usd(p.prix * l.qte) : "";
+    return `<div class="ligne-row">
+      <select onchange="updateLigne(${i},'produitId',this.value)">
+        <option value="">— Choisir article —</option>${options.replace(`value="${l.produitId}"`, `value="${l.produitId}" selected`)}
+      </select>
+      <input class="qte-input" type="number" min="1" value="${l.qte}" onchange="updateLigne(${i},'qte',this.value)" oninput="updateLigne(${i},'qte',this.value)" />
+      <span class="ligne-prix">${montant}</span>
+      ${lignes.length > 1 ? `<button class="icon-btn red" onclick="removeLigne(${i})">✕</button>` : ""}
+    </div>`;
+  }).join("");
+  updateVenteTotal();
+}
+
+function updateLigne(i, key, val) {
+  lignes[i][key] = key === "qte" ? Number(val) : val;
+  renderLignes();
+}
+
+function updateVenteTotal() {
+  const total = lignes.reduce((s,l) => {
+    const p = produits.find(x => x.id === l.produitId);
+    return s + (p ? p.prix * l.qte : 0);
+  }, 0);
+  document.getElementById("vente-total-display").textContent = "Total : " + usd(total);
+}
+
+
+
+// ── ALERTES ───────────────────────────────────────────────────────────────────
+function renderAlertes() {
+  const al = alertes();
+  const el = document.getElementById("alertes-content");
+  if (al.length === 0) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">✓</div>
+      <div class="empty-msg">Tous les stocks sont suffisants !</div>
+      <div class="empty-sub">Aucun article n'est en dessous du seuil d'alerte.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="alert-critical-msg">⚠ ${al.length} article(s) nécessitent un réapprovisionnement urgent.</div>` +
+    al.map(a => {
+      const pct = Math.min(Math.round((a.stock/a.seuil)*100), 100);
+      return `<div class="alert-card">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:16px;color:#fff">${a.nom}</div>
+          <div style="color:#aaa;font-size:13px;margin-top:4px">${a.categorie} · Seuil : ${a.seuil} ${a.unite}</div>
+          <div style="margin-top:8px">
+            <span style="color:#e74c3c;font-size:22px;font-weight:800">${a.stock}</span>
+            <span style="color:#777;margin-left:4px;font-size:13px">${a.unite} restants</span>
+          </div>
+          <div class="alert-bar-track"><div class="alert-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input id="reappro-${a.id}" type="number" min="1" placeholder="Qté" style="width:90px" />
+          <button class="btn-primary" onclick="reappro(${a.id})">Réapprovisionner</button>
+        </div>
+      </div>`;
+    }).join("");
+}
+
+
+
+// ── MODALS ────────────────────────────────────────────────────────────────────
+function openModal(id) {
+  if (id === "modal-add-prod" && !editProdId) {
+    document.getElementById("modal-prod-title").textContent = "Nouvel Article";
+    ["prod-nom","prod-prix","prod-stock","prod-seuil","prod-unite"].forEach(f => document.getElementById(f).value = "");
+    document.getElementById("prod-categorie").value = "Tuyaux";
+  }
+  if (id === "modal-add-vente") {
+    lignes = [{ produitId: "", qte: 1 }];
+    document.getElementById("vente-client").value = "";
+    document.getElementById("vente-date").value = new Date().toISOString().split("T")[0];
+    document.getElementById("vente-statut").value = "Payé";
+    renderLignes();
+  }
+  document.getElementById(id).classList.add("show");
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("show");
+  if (id === "modal-add-prod") { editProdId = null; }
+}
+
+// Close modal on overlay click
+document.querySelectorAll(".overlay").forEach(o => {
+  o.addEventListener("click", e => { if (e.target === o) o.classList.remove("show"); });
+});
+
+// init handled by Firebase listeners
+
+
+// ── SAUVEGARDE FIRESTORE ────────────────────────────────────────────────────
+async function saveProduit() {
+  const nom      = document.getElementById("prod-nom").value.trim();
+  const prix     = parseFloat(document.getElementById("prod-prix").value);
+  const stock    = parseInt(document.getElementById("prod-stock").value);
+  const seuil    = parseInt(document.getElementById("prod-seuil").value) || 0;
+  const unite    = document.getElementById("prod-unite").value.trim() || "pcs";
+  const categorie= document.getElementById("prod-categorie").value;
+  if (!nom || isNaN(prix) || isNaN(stock)) { showToast("Remplissez tous les champs obligatoires", "error"); return; }
+
+  const data = { nom, prix, stock, seuil, unite, categorie };
+  try {
+    if (editProdId) {
+      await produitsRef.doc(editProdId).update(data);
+      showToast("Article mis à jour !");
+    } else {
+      await produitsRef.add(data);
+      showToast("Article ajouté !");
+    }
+    editProdId = null;
+    closeModal("modal-add-prod");
+  } catch(e) { showToast("Erreur : " + e.message, "error"); }
+}
+
+async function deleteProduit(id) {
+  try {
+    await produitsRef.doc(id).delete();
+    showToast("Article supprimé");
+  } catch(e) { showToast("Erreur : " + e.message, "error"); }
+}
+
+async function saveVente() {
+  const client = document.getElementById("vente-client").value.trim();
+  const date   = document.getElementById("vente-date").value;
+  const statut = document.getElementById("vente-statut").value;
+  if (!client || lignes.some(l => !l.produitId)) { showToast("Remplissez tous les champs", "error"); return; }
+
+  const total = lignes.reduce((s,l) => {
+    const p = produits.find(x => x.id === l.produitId);
+    return s + (p ? p.prix * l.qte : 0);
+  }, 0);
+
+  const prodVendus = lignes.map(l => ({
+    produitId: l.produitId,
+    qte: l.qte,
+    prix: produits.find(p => p.id === l.produitId)?.prix || 0
+  }));
+
+  try {
+    // Enregistrer la vente
+    await ventesRef.add({ date, client, produits: prodVendus, total, statut });
+
+    // Décrémenter le stock de chaque article vendu
+    const batch = db.batch();
+    for (const l of lignes) {
+      const p = produits.find(x => x.id === l.produitId);
+      if (p) {
+        batch.update(produitsRef.doc(l.produitId), {
+          stock: Math.max(0, p.stock - l.qte)
+        });
+      }
+    }
+    await batch.commit();
+
+    showToast("Vente enregistrée !");
+    closeModal("modal-add-vente");
+  } catch(e) { showToast("Erreur : " + e.message, "error"); }
+}
+
+async function toggleStatut(id) {
+  const v = ventes.find(x => x.id === id);
+  if (!v) return;
+  const newStatut = v.statut === "Payé" ? "En attente" : "Payé";
+  try {
+    await ventesRef.doc(id).update({ statut: newStatut });
+  } catch(e) { showToast("Erreur", "error"); }
+}
+
+async function reappro(id) {
+  const qte = parseInt(document.getElementById("reappro-" + id)?.value);
+  if (!qte || qte <= 0) { showToast("Quantité invalide", "error"); return; }
+  const p = produits.find(x => x.id === id);
+  if (!p) return;
+  try {
+    await produitsRef.doc(id).update({ stock: p.stock + qte });
+    showToast("Stock mis à jour !");
+  } catch(e) { showToast("Erreur", "error"); }
+}
+
+// Démarrer
+startListeners();
+
+</script>
+</body>
+</html>
