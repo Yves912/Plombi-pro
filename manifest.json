@@ -2,7 +2,7 @@
   "name": "PlombiPro — Gestion de Boutique",
   "short_name": "PlombiPro",
   "description": "Logiciel de gestion de stock et ventes pour boutique de plomberie",
-  "start_url": "./plomberie-pro-firebase.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f6f8",
   "theme_color": "#1a5276",
