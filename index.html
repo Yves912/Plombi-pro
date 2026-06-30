@@ -194,15 +194,10 @@
 
 <div id="toast"></div>
 
-
-<!-- Firebase SDK (compat version) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-
-// ── FIREBASE CONFIG ─────────────────────────────────────────────────────────
-// Remplace ces valeurs par tes propres clés Firebase
 const firebaseConfig = {
   apiKey:            "COLLE_TON_API_KEY_ICI",
   authDomain:        "COLLE_TON_AUTH_DOMAIN_ICI",
@@ -212,25 +207,20 @@ const firebaseConfig = {
   appId:             "COLLE_TON_APP_ID_ICI"
 };
 
-// Init Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const produitsRef = db.collection("produits");
 const ventesRef   = db.collection("ventes");
 
-// ── DONNÉES EN MÉMOIRE ───────────────────────────────────────────────────────
 let produits = [];
 let ventes   = [];
 
-// ── ÉCOUTE EN TEMPS RÉEL ────────────────────────────────────────────────────
 function startListeners() {
-  // Produits — mise à jour automatique dès qu'une donnée change
   produitsRef.orderBy("nom").onSnapshot(snapshot => {
     produits = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderPage(currentPage);
   });
 
-  // Ventes — mise à jour automatique
   ventesRef.orderBy("date", "desc").onSnapshot(snapshot => {
     ventes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderPage(currentPage);
@@ -244,7 +234,6 @@ let filterStatut = "Tous";
 let editProdId   = null;
 let lignes       = [];
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
 const usd = n => "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const alertes = () => produits.filter(p => p.stock <= p.seuil);
 
@@ -256,7 +245,6 @@ function showToast(msg, type = "success") {
   setTimeout(() => t.style.display = "none", 3000);
 }
 
-// ── NAVIGATION ────────────────────────────────────────────────────────────────
 function navigate(page) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
@@ -284,7 +272,6 @@ function updateBadge() {
   document.getElementById("footer-count").textContent = `💧 Stock actif : ${produits.length} articles`;
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function renderDashboard() {
   const totalStock    = produits.reduce((s,p) => s + p.stock * p.prix, 0);
   const ventesMois    = ventes.filter(v => v.date.startsWith(new Date().toISOString().slice(0,7))).reduce((s,v) => s + v.total, 0);
@@ -312,7 +299,6 @@ function renderDashboard() {
       <div class="kpi-bar" style="background:${k.color}"></div>
     </div>`).join("");
 
-  // Recent ventes
   html += `<div class="card span2">
     <div class="card-header"><span class="card-title">Ventes Récentes</span><button class="link-btn" onclick="navigate('ventes')">Voir tout →</button></div>
     <div class="table-wrap"><table><thead><tr><th>Date</th><th>Client</th><th>Montant</th><th>Statut</th></tr></thead><tbody>
@@ -324,7 +310,6 @@ function renderDashboard() {
     </tr>`).join("")}
     </tbody></table></div></div>`;
 
-  // Top articles
   html += `<div class="card span2">
     <div class="card-header"><span class="card-title">Top Articles par Valeur</span><button class="link-btn" onclick="navigate('stock')">Gérer →</button></div>
     ${topProduits.map((p,i) => {
@@ -336,7 +321,6 @@ function renderDashboard() {
     }).join("")}
   </div>`;
 
-  // Alert banner
   if (al.length > 0) {
     html += `<div class="alert-banner span4">
       <div class="alert-banner-header">
@@ -350,9 +334,7 @@ function renderDashboard() {
   document.getElementById("kpi-grid").innerHTML = html;
 }
 
-// ── STOCK ─────────────────────────────────────────────────────────────────────
 function renderStock() {
-  // Category filters
   const filterWrap = document.getElementById("cat-filters");
   filterWrap.innerHTML = CATEGORIES.map(c =>
     `<button class="cat-btn ${filterCat===c?'active':''}" onclick="setCatFilter('${c}')">${c}</button>`
@@ -376,8 +358,8 @@ function renderStock() {
       <td>${p.seuil} ${p.unite}</td>
       <td><span class="pill ${alerte?'pill-red':'pill-green'}">${alerte?'⚠ Critique':'✓ Normal'}</span></td>
       <td>
-        <button class="icon-btn" onclick="editProduit(${p.id})" title="Modifier">✏</button>
-        <button class="icon-btn red" onclick="deleteProduit(${p.id})" title="Supprimer">✕</button>
+        <button class="icon-btn" onclick="editProduit('${p.id}')" title="Modifier">✏</button>
+        <button class="icon-btn red" onclick="deleteProduit('${p.id}')" title="Supprimer">✕</button>
       </td>
     </tr>`;
   }).join("");
@@ -402,11 +384,6 @@ function editProduit(id) {
   openModal("modal-add-prod");
 }
 
-
-
-
-
-// ── VENTES ────────────────────────────────────────────────────────────────────
 function renderVentes() {
   const totalAll    = ventes.reduce((s,v) => s+v.total, 0);
   const totalPaye   = ventes.filter(v=>v.statut==="Payé").reduce((s,v) => s+v.total, 0);
@@ -421,7 +398,6 @@ function renderVentes() {
     <div class="mini-card-lbl">${c.label}</div>
   </div>`).join("");
 
-  // filters
   document.querySelectorAll("#vente-filters .cat-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.statut === filterStatut);
   });
@@ -436,7 +412,7 @@ function renderVentes() {
       <td style="color:#aaa">${v.produits.length} article(s)</td>
       <td style="color:#e67e22;font-weight:700">${usd(v.total)}</td>
       <td><span class="pill ${v.statut==='Payé'?'pill-green':'pill-orange'}">${v.statut}</span></td>
-      <td><button class="icon-btn" style="font-size:11px" onclick="toggleStatut(${v.id})">${v.statut==='Payé'?'↺ Annuler':'✓ Marquer payé'}</button></td>
+      <td><button class="icon-btn" style="font-size:11px" onclick="toggleStatut('${v.id}')">${v.statut==='Payé'?'↺ Annuler':'✓ Marquer payé'}</button></td>
     </tr>`).join("");
 }
 
@@ -445,9 +421,6 @@ function setVenteFilter(s) {
   renderVentes();
 }
 
-
-
-// LIGNES
 function addLigne() {
   lignes.push({ produitId: "", qte: 1 });
   renderLignes();
@@ -488,9 +461,6 @@ function updateVenteTotal() {
   document.getElementById("vente-total-display").textContent = "Total : " + usd(total);
 }
 
-
-
-// ── ALERTES ───────────────────────────────────────────────────────────────────
 function renderAlertes() {
   const al = alertes();
   const el = document.getElementById("alertes-content");
@@ -517,15 +487,12 @@ function renderAlertes() {
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <input id="reappro-${a.id}" type="number" min="1" placeholder="Qté" style="width:90px" />
-          <button class="btn-primary" onclick="reappro(${a.id})">Réapprovisionner</button>
+          <button class="btn-primary" onclick="reappro('${a.id}')">Réapprovisionner</button>
         </div>
       </div>`;
     }).join("");
 }
 
-
-
-// ── MODALS ────────────────────────────────────────────────────────────────────
 function openModal(id) {
   if (id === "modal-add-prod" && !editProdId) {
     document.getElementById("modal-prod-title").textContent = "Nouvel Article";
@@ -547,15 +514,10 @@ function closeModal(id) {
   if (id === "modal-add-prod") { editProdId = null; }
 }
 
-// Close modal on overlay click
 document.querySelectorAll(".overlay").forEach(o => {
   o.addEventListener("click", e => { if (e.target === o) o.classList.remove("show"); });
 });
 
-// init handled by Firebase listeners
-
-
-// ── SAUVEGARDE FIRESTORE ────────────────────────────────────────────────────
 async function saveProduit() {
   const nom      = document.getElementById("prod-nom").value.trim();
   const prix     = parseFloat(document.getElementById("prod-prix").value);
@@ -604,10 +566,8 @@ async function saveVente() {
   }));
 
   try {
-    // Enregistrer la vente
     await ventesRef.add({ date, client, produits: prodVendus, total, statut });
 
-    // Décrémenter le stock de chaque article vendu
     const batch = db.batch();
     for (const l of lignes) {
       const p = produits.find(x => x.id === l.produitId);
@@ -644,10 +604,9 @@ async function reappro(id) {
   } catch(e) { showToast("Erreur", "error"); }
 }
 
-// Démarrer
 startListeners();
-
 </script>
+
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

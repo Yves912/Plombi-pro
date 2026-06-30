@@ -1,8 +1,8 @@
-const CACHE_NAME = 'plombipro-v1.2';
+const CACHE_NAME = 'plombipro-v2.0';
 
 // Files to cache for offline use
 const ASSETS = [
-  './plomberie-pro-firebase.html',
+  './index.html',
   './manifest.json'
 ];
 
@@ -43,6 +43,6 @@ self.addEventListener('fetch', event => {
         }
         return response;
       });
-    }).catch(() => caches.match('./plomberie-pro-firebase.html'))
+    }).catch(() => caches.match('./index.html'))
   );
 });
